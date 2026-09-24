@@ -1,6 +1,13 @@
-<div id="lift-cal-root"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Weekly Lift Split</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f7f6f3; }
   #lift-cal-root {
     --bg: #f7f6f3;
     --surface: #ffffff;
@@ -36,14 +43,22 @@
   .lc-progress-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; display: flex; justify-content: space-between; }
   .lc-progress-track { height: 6px; background: #f0efec; border-radius: 99px; overflow: hidden; }
   .lc-progress-fill-week { height: 100%; background: var(--check-color); border-radius: 99px; transition: width 0.4s ease; }
-  .lc-hint { color: var(--text-secondary); font-size: 12px; margin-bottom: 1.25rem; padding: 10px 14px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); }
+  .lc-hint { color: var(--text-secondary); font-size: 12px; margin-bottom: 1rem; padding: 10px 14px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); }
+  .lc-viewtoggle { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+  .lc-viewtoggle button { flex: 1; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 12px; border-radius: 7px; border: 0.5px solid var(--border-mid); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+  .lc-viewtoggle button.active { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+  .lc-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 1.25rem; }
+  .lc-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .lc-legend i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+
+  /* Week grid view */
   .lc-week { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
   .lc-week.week-complete { box-shadow: 0 0 0 2px #ffd70055; border-color: var(--gold); }
-  .lc-week-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; cursor: pointer; }
+  .lc-week-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; cursor: pointer; flex-wrap: wrap; }
   .lc-week-head-left { display: flex; align-items: center; gap: 10px; }
   .lc-week-label { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); }
   .lc-week-dates { font-size: 12px; color: var(--text-muted); }
-  .lc-week-mini-track { width: 90px; height: 5px; background: #f0efec; border-radius: 99px; overflow: hidden; }
+  .lc-week-mini-track { width: 60px; height: 5px; background: #f0efec; border-radius: 99px; overflow: hidden; }
   .lc-week-mini-fill { height: 100%; background: var(--check-color); border-radius: 99px; }
   .lc-week-pct { font-size: 11.5px; color: var(--text-secondary); min-width: 32px; text-align: right; }
   .lc-caret { font-size: 11px; color: var(--text-secondary); transition: transform 0.2s ease; }
@@ -53,20 +68,7 @@
   .lc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
   @media (max-width: 820px) { .lc-grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 600px) { .lc-grid { grid-template-columns: 1fr; gap: 8px; } }
-  @media (max-width: 600px) {
-    #lift-cal-root { padding: 18px 12px 28px; font-size: 14.5px; }
-    .lc-header { flex-direction: column; align-items: flex-start; }
-    .lc-stats { text-align: left; }
-    .lc-title { font-size: 22px; }
-    .lc-week-head { flex-wrap: wrap; }
-    .lc-week-mini-track { width: 60px; }
-    .lc-day { padding: 14px 14px 16px; }
-    .lc-day-date { font-size: 20px; }
-    .lc-type-badge { font-size: 11.5px; padding: 4px 10px; }
-    .lc-ex { padding: 6px 0; }
-    .lc-ex input { width: 19px; height: 19px; flex-shrink: 0; }
-    .lc-toggle { padding: 4px 0; }
-  }
+
   .lc-day {
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -89,7 +91,6 @@
   .lc-swap-btn:hover { background: #f0efec; color: var(--text-primary); }
   .lc-swap-btn.selected { background: var(--check-color); border-color: var(--check-color); color: #fff; }
   .lc-day.swap-selected { box-shadow: 0 0 0 2px var(--check-color); }
-  @media (max-width: 600px) { .lc-swap-btn { width: 32px; height: 32px; font-size: 15px; } }
   .lc-progress-track-day { height: 4px; background: #f0efec; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
   .lc-progress-fill { height: 100%; background: var(--type-color, #999); transition: width 0.25s ease; }
   .lc-ex-list { list-style: none; margin: 0; padding: 0; display: none; flex-direction: column; gap: 7px; }
@@ -104,13 +105,53 @@
   .lc-week-footer { display: flex; justify-content: flex-end; margin-top: 12px; }
   .lc-reset { background: var(--surface); border: 0.5px solid var(--border-mid); color: var(--text-secondary); font-size: 11.5px; font-family: 'Inter', sans-serif; font-weight: 500; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
   .lc-reset:hover { background: #f0efec; color: var(--text-primary); }
-  .lc-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 1.25rem; }
-  .lc-legend span { display: inline-flex; align-items: center; gap: 5px; }
-  .lc-legend i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+
+  @media (max-width: 600px) {
+    #lift-cal-root { padding: 18px 12px 28px; font-size: 14.5px; }
+    .lc-header { flex-direction: column; align-items: flex-start; }
+    .lc-stats { text-align: left; }
+    .lc-title { font-size: 22px; }
+    .lc-week-mini-track { width: 44px; }
+    .lc-day { padding: 14px 14px 16px; }
+    .lc-day-date { font-size: 20px; }
+    .lc-type-badge { font-size: 11.5px; padding: 4px 10px; }
+    .lc-ex { padding: 6px 0; }
+    .lc-ex input { width: 19px; height: 19px; flex-shrink: 0; }
+    .lc-toggle { padding: 4px 0; }
+    .lc-swap-btn { width: 32px; height: 32px; font-size: 15px; }
+  }
+
+  /* Day-by-day view */
+  .lc-dayview { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .lc-dv-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .lc-dv-nav-btn { border: 0.5px solid var(--border-mid); background: var(--surface); color: var(--text-primary); font-size: 15px; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+  .lc-dv-nav-btn:disabled { opacity: 0.35; cursor: default; }
+  .lc-dv-nav-btn:hover:not(:disabled) { background: #f0efec; }
+  .lc-dv-center { text-align: center; flex: 1; }
+  .lc-dv-week-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .lc-dv-dayname { font-family: 'Inter Tight', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-top: 2px; }
+  .lc-dv-date { font-family: 'Inter Tight', sans-serif; font-size: 30px; font-weight: 700; margin: 2px 0 12px; }
+  .lc-dv-badges { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
+  .lc-dv-progress-track { height: 6px; background: #f0efec; border-radius: 99px; overflow: hidden; margin-bottom: 18px; }
+  .lc-dv-progress-fill { height: 100%; border-radius: 99px; transition: width 0.25s ease; }
+  .lc-dv-ex-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .lc-dv-ex { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
+  .lc-dv-ex input { width: 22px; height: 22px; flex-shrink: 0; cursor: pointer; }
+  .lc-dv-ex.checked { background: #f7f9f6; }
+  .lc-dv-ex.checked .name { text-decoration: line-through; color: var(--text-secondary); }
+  .lc-dv-ex .name { font-weight: 600; font-size: 14px; display: block; }
+  .lc-dv-ex .sets { color: var(--text-secondary); font-size: 12px; display: block; margin-top: 1px; }
+  .lc-dv-rest { text-align: center; color: var(--text-secondary); font-style: italic; padding: 30px 0; }
+  .lc-dv-jump { display: flex; justify-content: center; margin-top: 14px; }
+  .lc-dv-jump button { border: none; background: none; color: var(--check-color); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 6px 10px; }
+
   .lc-toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-80px); background: #1a1917; color: #fff; font-family: 'Inter Tight', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 99px; z-index: 10000; pointer-events: none; opacity: 0; transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.35s ease; white-space: nowrap; }
   .lc-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   canvas.lc-confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
 </style>
+</head>
+<body>
+<div id="lift-cal-root"></div>
 <script>
 (function () {
   const TYPES = {
@@ -164,6 +205,9 @@
   let openDays = {};
   let dragSrc = null;
   let swapSelected = null;
+  let viewMode = "day"; // "week" or "day" — day-by-day is easiest to read on mobile
+  let dayViewIndex = 0;
+  let dayViewInitialized = false;
 
   function isoDate(d) { return d.toISOString().slice(0, 10); }
   function fmtDate(d) { return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
@@ -184,6 +228,13 @@
     }
     return weeks;
   }
+  function flattenDays(weeks) {
+    const flat = [];
+    weeks.forEach((dates, wi) => {
+      dates.forEach((d, di) => flat.push({ date: d, weekIndex: wi, dowIndex: di }));
+    });
+    return flat;
+  }
 
   function defaultOpenWeekIndex(weeks) {
     const today = new Date();
@@ -192,6 +243,14 @@
       if (today <= weeks[i][6]) return i;
     }
     return weeks.length - 1;
+  }
+  function defaultDayIndex(allDays) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < allDays.length; i++) {
+      if (isoDate(allDays[i].date) >= isoDate(today)) return i;
+    }
+    return allDays.length - 1;
   }
 
   async function load() {
@@ -207,6 +266,10 @@
       const c = await window.storage.get("lift-cal-checks", false);
       if (c && c.value) checks = JSON.parse(c.value);
     } catch (e) {}
+    try {
+      const v = await window.storage.get("lift-cal-viewmode", false);
+      if (v && v.value) viewMode = v.value;
+    } catch (e) {}
     render();
   }
   async function saveDayTypes() {
@@ -214,6 +277,9 @@
   }
   async function saveChecks() {
     try { await window.storage.set("lift-cal-checks", JSON.stringify(checks), false); } catch (e) {}
+  }
+  async function saveViewMode() {
+    try { await window.storage.set("lift-cal-viewmode", viewMode, false); } catch (e) {}
   }
 
   function confettiBurst(x, y) {
@@ -223,7 +289,7 @@
     canvas.height = window.innerHeight;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext("2d");
-    const colors = ["#c8a800", "#1258a0", "#b848a8", "#2a8a60", "#4a3faa", "#1a7a40"];
+    const colors = ["#c8a800", "#1258a0", "#b848a8", "#2a8a60", "#cc6a1e", "#1a7a40"];
     const particles = Array.from({ length: 80 }, () => ({
       x, y,
       vx: (Math.random() - 0.5) * 9,
@@ -254,7 +320,6 @@
     }
     tick();
   }
-
   function showToast(msg) {
     const t = document.createElement("div");
     t.className = "lc-toast";
@@ -285,9 +350,10 @@
 
   function render() {
     const weeks = buildWeeks();
-    if (Object.keys(openWeeks).length === 0) {
-      openWeeks[defaultOpenWeekIndex(weeks)] = true;
-    }
+    const allDays = flattenDays(weeks);
+    if (Object.keys(openWeeks).length === 0) openWeeks[defaultOpenWeekIndex(weeks)] = true;
+    if (!dayViewInitialized) { dayViewIndex = defaultDayIndex(allDays); dayViewInitialized = true; }
+    dayViewIndex = Math.max(0, Math.min(dayViewIndex, allDays.length - 1));
 
     let programDone = 0, programTotal = 0, weeksComplete = 0;
     weeks.forEach((dates) => {
@@ -312,14 +378,116 @@
         <div class="lc-progress-label"><span>Program progress</span><span>${programDone}/${programTotal} exercises</span></div>
         <div class="lc-progress-track"><div class="lc-progress-fill-week" style="width:${programTotal ? Math.round((programDone / programTotal) * 100) : 0}%"></div></div>
       </div>
-      <div class="lc-hint">Drag a day onto another to swap their lifting workouts for every week (or tap the ⇄ button and then a second day, if drag doesn't work well on your device). Runs stay attached to Monday and Wednesday.</div>
+      <div class="lc-viewtoggle">
+        <button data-mode="day" class="${viewMode === "day" ? "active" : ""}">Day-by-day</button>
+        <button data-mode="week" class="${viewMode === "week" ? "active" : ""}">Week grid</button>
+      </div>
+      ${viewMode === "week" ? `<div class="lc-hint">Drag a day onto another to swap their lifting workouts for every week (or tap ⇄ then a second day). Runs stay attached to Monday and Wednesday.</div>` : ""}
       <div class="lc-legend">
         ${DEFAULT_ORDER.filter(k => k !== "rest").map(k => `<span><i style="background:${TYPES[k].color}"></i>${TYPES[k].label}</span>`).join("")}
       </div>
-      <div id="lc-weeks"></div>
+      <div id="lc-body"></div>
     `;
 
-    const weeksEl = document.getElementById("lc-weeks");
+    root.querySelectorAll(".lc-viewtoggle button").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        viewMode = btn.dataset.mode;
+        if (viewMode === "day") dayViewIndex = defaultDayIndex(allDays);
+        await saveViewMode();
+        render();
+      });
+    });
+
+    const body = document.getElementById("lc-body");
+    if (viewMode === "day") {
+      renderDayView(body, allDays);
+    } else {
+      renderWeekView(body, weeks);
+    }
+  }
+
+  function renderDayView(container, allDays) {
+    const entry = allDays[dayViewIndex];
+    const d = entry.date;
+    const dIso = isoDate(d);
+    const typeKey = dayTypes[entry.dowIndex];
+    const type = TYPES[typeKey];
+    const hasExtraRun = !!extraRun[entry.dowIndex];
+    const p = dayProgress(dIso, typeKey, hasExtraRun);
+    const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
+    const extraKey = `${dIso}-extra-run`;
+
+    const wrap = document.createElement("div");
+    wrap.className = "lc-dayview";
+    wrap.innerHTML = `
+      <div class="lc-dv-nav">
+        <button class="lc-dv-nav-btn" id="lc-dv-prev" ${dayViewIndex === 0 ? "disabled" : ""}>‹</button>
+        <div class="lc-dv-center">
+          <div class="lc-dv-week-label">Week ${entry.weekIndex + 1}</div>
+          <div class="lc-dv-dayname">${DAY_NAMES[entry.dowIndex]}</div>
+        </div>
+        <button class="lc-dv-nav-btn" id="lc-dv-next" ${dayViewIndex === allDays.length - 1 ? "disabled" : ""}>›</button>
+      </div>
+      <div style="text-align:center">
+        <div class="lc-dv-date">${fmtDate(d)}</div>
+        <div class="lc-dv-badges">
+          <span class="lc-type-badge" style="background:${type.badgeBg};color:${type.badgeText}">${type.label}</span>
+          ${hasExtraRun ? `<span class="lc-type-badge" style="background:${RUN_EXTRA.badgeBg};color:${RUN_EXTRA.badgeText}">Run</span>` : ""}
+        </div>
+      </div>
+      ${p.total ? `<div class="lc-dv-progress-track"><div class="lc-dv-progress-fill" style="width:${pct}%;background:${type.color}"></div></div>` : ""}
+      <div id="lc-dv-list"></div>
+      <div class="lc-dv-jump"><button id="lc-dv-today">Jump to today</button></div>
+    `;
+    container.appendChild(wrap);
+
+    const list = wrap.querySelector("#lc-dv-list");
+    if (!p.total) {
+      list.innerHTML = `<div class="lc-dv-rest">${typeKey === "rest" ? "Recovery day." : "Enjoy the run."}</div>`;
+    } else {
+      const ul = document.createElement("ul");
+      ul.className = "lc-dv-ex-list";
+      type.exercises.forEach((ex, idx) => {
+        const key = `${dIso}-${idx}`;
+        const checked = !!checks[key];
+        const li = document.createElement("li");
+        li.className = "lc-dv-ex" + (checked ? " checked" : "");
+        li.innerHTML = `<input type="checkbox" ${checked ? "checked" : ""} style="accent-color:${type.color}" />
+          <span><span class="name">${ex.n}</span><span class="sets">${ex.s}</span></span>`;
+        li.addEventListener("click", () => toggleDayViewCheck(key, dIso, typeKey, hasExtraRun, wrap));
+        ul.appendChild(li);
+      });
+      if (hasExtraRun) {
+        const checked = !!checks[extraKey];
+        const li = document.createElement("li");
+        li.className = "lc-dv-ex" + (checked ? " checked" : "");
+        li.innerHTML = `<input type="checkbox" ${checked ? "checked" : ""} style="accent-color:${RUN_EXTRA.color}" />
+          <span><span class="name">${RUN_EXTRA.n}</span><span class="sets">${RUN_EXTRA.s}</span></span>`;
+        li.addEventListener("click", () => toggleDayViewCheck(extraKey, dIso, typeKey, hasExtraRun, wrap));
+        ul.appendChild(li);
+      }
+      list.appendChild(ul);
+    }
+
+    wrap.querySelector("#lc-dv-prev").addEventListener("click", () => { dayViewIndex -= 1; render(); });
+    wrap.querySelector("#lc-dv-next").addEventListener("click", () => { dayViewIndex += 1; render(); });
+    wrap.querySelector("#lc-dv-today").addEventListener("click", () => { dayViewIndex = defaultDayIndex(allDays); render(); });
+  }
+
+  async function toggleDayViewCheck(key, dIso, typeKey, hasExtraRun, wrap) {
+    checks[key] = !checks[key];
+    await saveChecks();
+    const np = dayProgress(dIso, typeKey, hasExtraRun);
+    if (np.total > 0 && np.done === np.total) {
+      const rect = wrap.getBoundingClientRect();
+      confettiBurst(rect.left + rect.width / 2, rect.top + 80);
+    }
+    render();
+  }
+
+  function renderWeekView(container, weeks) {
+    const weeksEl = document.createElement("div");
+    container.appendChild(weeksEl);
     weeks.forEach((dates, wi) => {
       const wp = weekProgress(dates);
       const wPct = wp.total ? Math.round((wp.done / wp.total) * 100) : 0;
@@ -345,12 +513,7 @@
           <div class="lc-week-footer"><button class="lc-reset" data-week="${wi}">Reset this week</button></div>
         </div>
       `;
-
-      weekEl.querySelector(".lc-week-head").addEventListener("click", () => {
-        openWeeks[wi] = !openWeeks[wi];
-        render();
-      });
-
+      weekEl.querySelector(".lc-week-head").addEventListener("click", () => { openWeeks[wi] = !openWeeks[wi]; render(); });
       weeksEl.appendChild(weekEl);
       if (!isOpen) return;
 
@@ -425,9 +588,7 @@
               const rect = card.getBoundingClientRect();
               confettiBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
             }
-            if (!wasWeekComplete && nowWeekComplete) {
-              showToast(`Week ${wi + 1} complete! 🎉`);
-            }
+            if (!wasWeekComplete && nowWeekComplete) showToast(`Week ${wi + 1} complete! 🎉`);
             render();
           });
         });
@@ -483,3 +644,5 @@
   load();
 })();
 </script>
+</body>
+</html>
