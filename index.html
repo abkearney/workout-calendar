@@ -51,8 +51,22 @@
   .lc-week-body { display: none; padding: 4px 16px 16px; }
   .lc-week.open .lc-week-body { display: block; }
   .lc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-  @media (max-width: 760px) { .lc-grid { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 460px) { .lc-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 820px) { .lc-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .lc-grid { grid-template-columns: 1fr; gap: 8px; } }
+  @media (max-width: 600px) {
+    #lift-cal-root { padding: 18px 12px 28px; font-size: 14.5px; }
+    .lc-header { flex-direction: column; align-items: flex-start; }
+    .lc-stats { text-align: left; }
+    .lc-title { font-size: 22px; }
+    .lc-week-head { flex-wrap: wrap; }
+    .lc-week-mini-track { width: 60px; }
+    .lc-day { padding: 14px 14px 16px; }
+    .lc-day-date { font-size: 20px; }
+    .lc-type-badge { font-size: 11.5px; padding: 4px 10px; }
+    .lc-ex { padding: 6px 0; }
+    .lc-ex input { width: 19px; height: 19px; flex-shrink: 0; }
+    .lc-toggle { padding: 4px 0; }
+  }
   .lc-day {
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -68,8 +82,14 @@
   .lc-day.complete { box-shadow: 0 0 0 2px #ffd70055; border-color: var(--gold); }
   .lc-day-name { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600; }
   .lc-day-date { font-family: 'Inter Tight', sans-serif; font-size: 18px; font-weight: 700; margin: 2px 0 6px; color: var(--text-primary); }
-  .lc-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .lc-badges { display: flex; align-items: center; justify-content: space-between; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .lc-badges-left { display: flex; gap: 5px; flex-wrap: wrap; }
   .lc-type-badge { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .lc-swap-btn { border: 0.5px solid var(--border-mid); background: var(--surface); color: var(--text-secondary); font-size: 13px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
+  .lc-swap-btn:hover { background: #f0efec; color: var(--text-primary); }
+  .lc-swap-btn.selected { background: var(--check-color); border-color: var(--check-color); color: #fff; }
+  .lc-day.swap-selected { box-shadow: 0 0 0 2px var(--check-color); }
+  @media (max-width: 600px) { .lc-swap-btn { width: 32px; height: 32px; font-size: 15px; } }
   .lc-progress-track-day { height: 4px; background: #f0efec; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
   .lc-progress-fill { height: 100%; background: var(--type-color, #999); transition: width 0.25s ease; }
   .lc-ex-list { list-style: none; margin: 0; padding: 0; display: none; flex-direction: column; gap: 7px; }
@@ -141,7 +161,9 @@
   let extraRun = DEFAULT_EXTRA_RUN.slice();
   let checks = {};
   let openWeeks = {};
+  let openDays = {};
   let dragSrc = null;
+  let swapSelected = null;
 
   function isoDate(d) { return d.toISOString().slice(0, 10); }
   function fmtDate(d) { return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
@@ -290,7 +312,7 @@
         <div class="lc-progress-label"><span>Program progress</span><span>${programDone}/${programTotal} exercises</span></div>
         <div class="lc-progress-track"><div class="lc-progress-fill-week" style="width:${programTotal ? Math.round((programDone / programTotal) * 100) : 0}%"></div></div>
       </div>
-      <div class="lc-hint">Drag a day onto another to swap their lifting workouts for every week — handy if your run days shift. Runs stay attached to Monday and Wednesday.</div>
+      <div class="lc-hint">Drag a day onto another to swap their lifting workouts for every week (or tap the ⇄ button and then a second day, if drag doesn't work well on your device). Runs stay attached to Monday and Wednesday.</div>
       <div class="lc-legend">
         ${DEFAULT_ORDER.filter(k => k !== "rest").map(k => `<span><i style="background:${TYPES[k].color}"></i>${TYPES[k].label}</span>`).join("")}
       </div>
@@ -341,7 +363,7 @@
         const p = dayProgress(dIso, typeKey, hasExtraRun);
         const dayComplete = p.total > 0 && p.done === p.total;
         const card = document.createElement("div");
-        card.className = "lc-day" + (dayComplete ? " complete" : "");
+        card.className = "lc-day" + (dayComplete ? " complete" : "") + (swapSelected === i ? " swap-selected" : "") + (openDays[dIso] ? " open" : "");
         card.style.setProperty("--type-color", type.color);
         card.draggable = true;
         card.dataset.index = i;
@@ -352,8 +374,11 @@
 
         const badgesHtml = `
           <div class="lc-badges">
-            <span class="lc-type-badge" style="background:${type.badgeBg};color:${type.badgeText}">${type.label}</span>
-            ${hasExtraRun ? `<span class="lc-type-badge" style="background:${RUN_EXTRA.badgeBg};color:${RUN_EXTRA.badgeText}">Run</span>` : ""}
+            <div class="lc-badges-left">
+              <span class="lc-type-badge" style="background:${type.badgeBg};color:${type.badgeText}">${type.label}</span>
+              ${hasExtraRun ? `<span class="lc-type-badge" style="background:${RUN_EXTRA.badgeBg};color:${RUN_EXTRA.badgeText}">Run</span>` : ""}
+            </div>
+            <button class="lc-swap-btn${swapSelected === i ? " selected" : ""}" data-swap="${i}" title="Tap to swap this day's workout with another day">⇄</button>
           </div>`;
 
         const mainExHtml = type.exercises.map((ex, idx) => {
@@ -383,6 +408,7 @@
 
         card.addEventListener("click", (e) => {
           if (e.target.tagName === "INPUT") return;
+          openDays[dIso] = !openDays[dIso];
           card.classList.toggle("open");
         });
         card.querySelectorAll(".lc-ex").forEach((li) => {
@@ -419,6 +445,22 @@
           dayTypes[dragSrc] = tmp;
           dragSrc = null;
           await saveDayTypes();
+          render();
+        });
+
+        card.querySelector(".lc-swap-btn").addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (swapSelected === null) {
+            swapSelected = i;
+          } else if (swapSelected === i) {
+            swapSelected = null;
+          } else {
+            const tmp = dayTypes[i];
+            dayTypes[i] = dayTypes[swapSelected];
+            dayTypes[swapSelected] = tmp;
+            swapSelected = null;
+            await saveDayTypes();
+          }
           render();
         });
 
